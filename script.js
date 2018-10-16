@@ -2,6 +2,7 @@
 //vars
 var c = document.getElementById("canvas");
 var screen = c.getContext("2d");
+var objects = {};
 
 //canvas functions
 function drawLine(){
@@ -59,9 +60,44 @@ function drawImage(image, x, y, scale, rotation){
 function render(){
     //clear
     screen.clearRect(0, 0, screen.width, screen.height);
-    rectangle(300,300, 200, 200, "red", 320);
-    rectangle(300,300, 200, 200, "red", 180);
-    rectangle(300,300, 200, 200, "red", 0);
 }
 
 render();
+
+//object functions
+function ObjectBase(name, type, direction, length, width, friction, bouncy){
+    this.name = name;
+    this.x = this.x || 0;
+    this.y = this.y || 0;
+    this.direction = this. direction || 0;
+    this.length = this.length || length || 0;
+    this.width = this.width || width || 0;
+    this.friction = this.friction || friction || 0;
+    this.bouncy = this.bouncy || bouncy || 0;
+    this.jumpTo = function(x, y){
+        this.x = x;
+        this.y = y;
+    };
+    if (type === 'rigid'){
+        this.rigid = new RigidBody();
+    }
+    objectAdd(this);
+}
+
+function RigidBody(){
+    this.speed = 0;
+    this.velocity = 0;
+}
+
+function objectAdd(object){
+    if (!typeof(object) === "object"){
+        return;
+    }
+    for (var i = 100000; i <= 999999; i ++){
+        if (!objects[i]){
+            object.id = i;
+            objects[i] = object;
+            return;
+        }
+    }
+}
