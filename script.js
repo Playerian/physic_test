@@ -70,8 +70,9 @@ function render(){
     var objList = Object.entries(objects);
     objList.forEach(function(value, index){
         var object = value[1];
-        rectangle(object.x, object.y, object.length, object.width, object.color, object.borderWidth, object.rotation);
-        fillColorRect(object.x + object.borderWidth, object.y + object.borderWidth, object.width - object.borderWidth * 2, object.height - object.borderWidth * 2, object.background, object.rotation);
+        console.log(object);
+        rectangle(object.x, object.y, object.width, object.height, object.color, object.borderWidth, object.rotation);
+        //fillColorRect(object.x + object.borderWidth, object.y + object.borderWidth, object.width - object.borderWidth * 2, object.height - object.borderWidth * 2, object.background, object.rotation);
     });
 }
 
@@ -123,7 +124,8 @@ function objectAdd(object){
 //activation
 function init(){
     var ball = new ObjectBase('ball', 'rigid', 0, 100, 1000);
-    ball.jumpTo(100, 100);
+    //render();
+    //rectangle(100,100, 100,100);
     render();
 }
 
