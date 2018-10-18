@@ -116,6 +116,21 @@ function Collector(){
             }
         }
     };
+    this.getAll = function(){
+        let holder = Object.entries(this);
+        let origin = holder;
+        for (var i = 0; i < holder.length; i ++){
+            holder[i] = holder[i][0];
+        }
+        holder = holder.filter(function(value){
+            console.log(value);
+            return parseInt(value) || false;
+        });
+        for (var i = 0; i < holder.length; i ++){
+            
+        }
+        return holder;
+    };
 }
 //object function
 function ObjectBase(name, type, rotation, width, height, friction, bouncy, color, background, borderWidth, shape){
@@ -167,14 +182,18 @@ function objectAdd(object){
     folder.addObject(object);
 }
 
+//timed function
+setInterval(function(){
+    //check force
+}, 100);
+
 //initialization
 function init(){
     var ball1 = new ObjectBase('ball', 'rigid', 0, 100, 100);
     ball1.jumpTo(100,100);
     ball1.borderWidth = 1;
-    var ball2 = new ObjectBase('ball2', 'rigid', 0, 50, 50);
-    ball2.jumpTo(50,50);
-    var 
+    var platform = new ObjectBase('platform', 'static', 0, 500, 200);
+    platform.jumpTo(10, 500);
     render();
     console.log(folder);
 }
