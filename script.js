@@ -2,7 +2,7 @@
 //vars
 var c = document.getElementById("canvas");
 var screen = c.getContext("2d");
-var objects = {};
+var folder = new Collector();
 
 //canvas functions
 function drawLine(){
@@ -27,14 +27,16 @@ function drawLine(){
 
 function fillColorRect(x1, y1, width, height, color, rotation){
     //fillColor(start x, start y, end x, end y, color in string)
+    screen.save();
     screen.beginPath();
     screen.lineWidth = 1;
-    screen.translate(x1, y1);
+    screen.translate(x1 + width / 2, y1 + height / 2);
     screen.rotate(rotation * Math.PI / 180);
-    screen.rect(x1, y1, width, height);
+    screen.rect(-width / 2, -height / 2, width, height);
     screen.fillStyle = color;
     screen.fill();
     screen.translate(-x1, -y1);
+    screen.restore();
 }
 
 function circle(a,b,c,color, thick){
@@ -47,13 +49,14 @@ function circle(a,b,c,color, thick){
 }
 
 function rectangle(x1,y1,width,height,color, thick, rotation){
+    screen.save();
     screen.strokeStyle = color;
     screen.lineWidth = thick || 1;
-    screen.translate(x1, y1);
+    screen.translate(x1 + width / 2, y1 + height / 2);
     screen.rotate(rotation * Math.PI / 180);
-    screen.rect(0,0, width, height);
+    screen.rect(-width / 2, -height / 2, width, height);
     screen.stroke();
-    screen.translate(-x1, -y1);
+    screen.restore();
 }
 
 function drawImage(image, x, y, scale, rotation){
@@ -66,21 +69,58 @@ function drawImage(image, x, y, scale, rotation){
 function render(){
     //clear
     screen.clearRect(0, 0, screen.width, screen.height);
-    //loop throughout objects
-    var objList = Object.entries(objects);
+    //loop throughout folder
+    var objList = Object.entries(folder);
     objList.forEach(function(value, index){
         var object = value[1];
-        console.log(object);
-        rectangle(object.x, object.y, object.width, object.height, object.color, object.borderWidth, object.rotation);
-        //fillColorRect(object.x + object.borderWidth, object.y + object.borderWidth, object.width - object.borderWidth * 2, object.height - object.borderWidth * 2, object.background, object.rotation);
+        if (typeof(object) === "function"){
+            return;
+        }
+        //rectangle
+        rectangle(object.x,
+        object.y,
+        object.width,
+        object.height,
+        object.color,
+        object.borderWidth,
+        object.rotation);
+        //filling
+        fillColorRect(object.x + object.borderWidth / 2,
+        object.y + object.borderWidth / 2,
+        object.width - object.borderWidth,
+        object.height - object.borderWidth,
+        object.background,
+        object.rotation);
     });
 }
 
 render();
 
 //object functions
-function ObjectBase(name, type, rotation, width, height, friction, bouncy, color, background, borderWidth){
+//collector function
+function Collector(){
+    //Methods
+    this.delete = function(key){
+        let property = this[key];
+        if (this[key]){
+            delete this[key];
+        }
+        return property;
+    };
+    this.addObject = function(object){
+        for (let i = 100000; i <= 999999; i ++){
+            if (!this[i]){
+                object.id = i;
+                this[i] = object;
+                return i;
+            }
+        }
+    };
+}
+//object function
+function ObjectBase(name, type, rotation, width, height, friction, bouncy, color, background, borderWidth, shape){
     this.name = name;
+    this.type = type || 'static';
     this.x = this.x || 0;
     this.y = this.y || 0;
     this.rotation = this. rotation || 0;
@@ -90,13 +130,14 @@ function ObjectBase(name, type, rotation, width, height, friction, bouncy, color
     this.bouncy = this.bouncy || bouncy || 0;
     this.color = this.color || color || "black";
     this.background = this.background || background || "white";
-    this.borderWidth = this.borderWidth || borderWidth || Math.min(height, width) * 0.1;
+    this.borderWidth = this.borderWidth || borderWidth || 1;
+    this.shape = this.shape || shape || 'rect';
     //methods
     this.jumpTo = function(x, y){
         this.x = x;
         this.y = y;
     };
-    //objects
+    //folder
     if (type === 'rigid'){
         this.rigid = new RigidBody();
     }
@@ -104,29 +145,38 @@ function ObjectBase(name, type, rotation, width, height, friction, bouncy, color
 }
 
 function RigidBody(){
-    this.speed = 0;
-    this.direction = 0;
+    this.forces = [];
+    this.addForce = function(speed, direction){
+        this.forces.push(new Force(speed, direction));
+    };
+    this.deleteForce = function(key){
+        delete this.forces[key];
+    };
+    
+}
+
+function Force(speed, direction){
+    this.speed = speed || 0;
+    this.direction = direction || 0;
 }
 
 function objectAdd(object){
     if (!typeof(object) === "object"){
         return;
     }
-    for (var i = 100000; i <= 999999; i ++){
-        if (!objects[i]){
-            object.id = i;
-            objects[i] = object;
-            return;
-        }
-    }
+    folder.addObject(object);
 }
 
-//activation
+//initialization
 function init(){
-    var ball = new ObjectBase('ball', 'rigid', 0, 100, 1000);
-    //render();
-    //rectangle(100,100, 100,100);
+    var ball1 = new ObjectBase('ball', 'rigid', 0, 100, 100);
+    ball1.jumpTo(100,100);
+    ball1.borderWidth = 1;
+    var ball2 = new ObjectBase('ball2', 'rigid', 0, 50, 50);
+    ball2.jumpTo(50,50);
+    var 
     render();
+    console.log(folder);
 }
 
 init();
