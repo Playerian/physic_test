@@ -2,8 +2,12 @@
 //vars
 const c = document.getElementById("canvas");
 const screen = c.getContext("2d");
-const runtime = 200;
+const runtime = 50;
+const canvasSize = 1000;
 var folder = new Collector();
+var tree = new QuadTree(0, 0, canvasSize);
+c.width = canvasSize;
+c.height = canvasSize;
 
 //handy functions
 function arrayRemove(array, index){
@@ -74,7 +78,7 @@ function drawImage(image, x, y, scale, rotation){
 //rendering function
 function render(){
     //clear
-    screen.clearRect(0, 0, 999999, 999999);
+    screen.clearRect(0, 0, c.width, c.height);
     //loop throughout folder
     var objList = Object.entries(folder);
     objList.forEach(function(value, index){
@@ -101,6 +105,153 @@ function render(){
 }
 
 //object functions
+//quadtree function
+function QuadTree(x, y, size, level){
+    //x y is from top-left point of the square
+    //size is both length and height since all 
+    //trees are square
+    //vars
+    this.x = x;
+    this.y = y;
+    this.size = size;
+    this.level = level + 1 || 0;
+    this.max = 5;
+    this.objects = [];
+    //methods
+    this.addRegion = function(){
+        //counterclockwise, top-right is i
+        this.nodes = [new QuadTree(this.x + this.size / 2, this.y, this.size / 2, this.level),
+        new QuadTree(this.x, this.y, this.size / 2, this.level),
+        new QuadTree(this.x, this.y + this.size / 2, this.size / 2, this.level),
+        new QuadTree(this.x + this.size / 2, this.y + this.size / 2, this.size / 2, this.level)
+        ];
+        return this.nodes;
+    };
+    this.deleteRegion = function(){
+        //actually delete all sub-region of father
+        delete this.nodes;
+    };
+    this.getRegion = function(object){
+        //check if object is object
+        if (typeof(object) !== "object"){
+            return "nil";
+        }
+        //get one of the region i ii iii iv from x,y 
+        //return accordingly, 0 1 2 3
+        //halfpoint of quadtree, both x and y
+        let halfPoint = size / 2;
+        //check if object x is more than halfpoint
+        if (object.x > halfPoint){
+            //check if y is larger than halfpoint
+            if (object.y > halfPoint){
+                //if so, belong to iv
+                return 3;
+            }else{//if y is not larger than halfpoint
+                //if y plus height is larget than halfpoint
+                if (object.y + object.height > halfPoint){
+                    //belongs to both i and iv
+                    return "both";
+                }else{//else, belongs to i
+                    return 0;
+                }
+            }
+        }else{//x is less than halfpoint
+            //check if length cross the halfpoint
+            if (object.x + object.length > halfPoint){
+                //if so, it belongs to both
+                return "both";
+            }else{//if doesn't cross halfpoint
+                //check if y larger than halfpoint
+                if (object.y > halfPoint){
+                    //if so, belongs to iii
+                    return 2;
+                }else{//y is not larget than halfpoint
+                    //check if y and height is larger than half point
+                    if (object.y + object.height > halfPoint){
+                        //belongs to both ii and iii
+                        return "both";
+                    }else {//not crossing halfpoint at all
+                        //belongs to ii
+                        return 1;
+                    }
+                }
+            }
+        }
+    };
+    //separate into 4 regions if primal
+    if (this.level === 0){
+        this.addRegion();
+        //update objects in region
+        this.addAllObject = function(collector){
+            //clear objects first
+            this.clearObject();
+            //collect all the objects
+            if (!collector.getAll){
+                return "nil";
+            }
+            let objList = collector.getAll();
+            //loop throught all the objects
+            for(let i = 0; i < objList.length; i ++){
+                let obj = objList[i];
+                let region = this;
+                let end = false;
+                //looping through stems to find a region to fit in
+                while(end === false){
+                    //get location
+                    let location = region.getRegion(obj);
+                    //check if obj can be sort into a location
+                    console.log(obj);
+                    console.log(location);
+                    if (typeof(location) === "number"){
+                        //if so, then find the next location/region
+                        //if smaller region exist
+                        if (region.nodes){
+                            region = region.nodes[location];
+                        }else{//smaller region doesn't exist
+                            //end the while loop
+                            end = true;
+                        }
+                    }else{//if not, then push it into the array
+                        //end the while loop
+                        end = true;
+                    }
+                    //if match found
+                    if (end === true){
+                        //push into this region
+                        region.objects.push(obj);
+                        //check if region is overflowing max # of objects
+                        if (region.objects.length > region.max){
+                            //split region
+                            let nodes = region.addRegion();
+                            //store and clear region objects
+                            let objArr = region.objects;
+                            region.objects = [];
+                            //loop through the objs
+                            for (let ii = 0; ii < objArr.length; ii ++){
+                                let obj = objArr[ii];
+                                let loc = region.getRegion(obj);
+                                if (loc === "both"){//if both region
+                                    //push to this region
+                                    region.objects.push(obj);
+                                }else{
+                                    //push to corresponding subregion
+                                    region.nodes[loc].objects.push(obj);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        };
+        this.clearObject = function(){
+            //clean up everything in this object
+            this.deleteRegion();
+            this.addRegion();
+            this.objects = [];
+        };
+    }
+}
+
 //collector function
 function Collector(){
     //Methods
@@ -158,8 +309,9 @@ function ObjectBase(name, type, rotation, width, height, friction, bouncy, color
     this.shape = this.shape || shape || 'rect';
     //methods
     this.jumpTo = function(x, y){
-        this.x = x;
-        this.y = y;
+        this.x = x || this.x;
+        this.y = y || this.y;
+        //where collision kicks in
     };
     //folder
     if (type === 'rigid'){
@@ -293,8 +445,8 @@ setInterval(function(){
             }
         }
         //push result into object
-        obj.x += xMove * runtime / 1000;
-        obj.y += yMove * runtime / 1000;
+        obj.jumpTo(obj.x + xMove * runtime / 1000);
+        obj.jumpTo(null, obj.y + yMove * runtime / 1000);
     }
     //finish check force, rendering
     render();
@@ -304,13 +456,11 @@ setInterval(function(){
 function init(){
     var ball1 = new ObjectBase('ball', 'rigid', 0, 100, 100);
     ball1.jumpTo(100,100);
-    ball1.rigid.addForce("force1", 10, 0);
-    ball1.rigid.addForce("force2", 10, 90);
-    ball1.rigid.addForce("force3", 10, 60);
     var platform = new ObjectBase('platform', 'static', 0, 500, 200);
     platform.jumpTo(10, 500);
     render();
     console.log(folder);
+    console.log(tree);
 }
 
 init();
