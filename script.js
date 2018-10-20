@@ -1,7 +1,8 @@
 /*global $*/
 //vars
-var c = document.getElementById("canvas");
-var screen = c.getContext("2d");
+const c = document.getElementById("canvas");
+const screen = c.getContext("2d");
+const runtime = 100;
 var folder = new Collector();
 
 //handy functions
@@ -73,7 +74,7 @@ function drawImage(image, x, y, scale, rotation){
 //rendering function
 function render(){
     //clear
-    screen.clearRect(0, 0, screen.width, screen.height);
+    screen.clearRect(0, 0, 999999, 999999);
     //loop throughout folder
     var objList = Object.entries(folder);
     objList.forEach(function(value, index){
@@ -188,6 +189,8 @@ function RigidBody(){
 function Force(key, speed, direction, type){
     //direction
     //0 is right 90 is down 180 is left 270 is top
+    //speed
+    //equal to object move at "x pixels per second"
     this.key = key || "nil";
     this.speed = speed || 0;
     this.direction = direction || 0;
@@ -292,11 +295,13 @@ setInterval(function(){
                 yMove += holder[1];
             }
         }
-        //xmove and ymove should be calculated
-        console.log("x: " +xMove);
-        console.log("y: " +yMove);
+        //push result into object
+        obj.x += xMove * runtime / 1000;
+        obj.y += yMove * runtime / 1000;
     }
-}, 2000);
+    //finish check force, rendering
+    render();
+}, runtime);
 
 //initialization
 function init(){
