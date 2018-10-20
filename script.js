@@ -2,7 +2,7 @@
 //vars
 const c = document.getElementById("canvas");
 const screen = c.getContext("2d");
-const runtime = 100;
+const runtime = 200;
 var folder = new Collector();
 
 //handy functions
@@ -99,8 +99,6 @@ function render(){
         object.rotation);
     });
 }
-
-render();
 
 //object functions
 //collector function
@@ -246,8 +244,7 @@ setInterval(function(){
         let yMove = 0;
         //loop through all forces
         for (let i2 = 0; i2 < forces.length; i2 ++){
-            let force = forces[i];
-            console.log(force);
+            let force = forces[i2];
             //change force into two subforce if not in a direction
             if (force.direction % 90 !== 0){
                 //store at first hand
@@ -307,7 +304,9 @@ setInterval(function(){
 function init(){
     var ball1 = new ObjectBase('ball', 'rigid', 0, 100, 100);
     ball1.jumpTo(100,100);
-    ball1.rigid.addForce("forceDown", 10, 45);
+    ball1.rigid.addForce("force1", 10, 0);
+    ball1.rigid.addForce("force2", 10, 90);
+    ball1.rigid.addForce("force3", 10, 60);
     var platform = new ObjectBase('platform', 'static', 0, 500, 200);
     platform.jumpTo(10, 500);
     render();
